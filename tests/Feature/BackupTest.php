@@ -20,8 +20,8 @@ beforeEach(function () {
 afterEach(function () {
     Schema::dropIfExists('backup_test_table');
 
-    File::deleteDirectory(storage_path('app/public/test-backup'));
-    File::deleteDirectory(storage_path('app/public/test-zip'));
+    File::deleteDirectory(storage_path('test-backup'));
+    File::deleteDirectory(storage_path('test-zip'));
 });
 
 it('can get tables list', function () {
@@ -79,4 +79,17 @@ it('returns 400 for zipping non-existent backup', function () {
     $response = $this->postJson('/backup/zip?timestamp=invalid_timestamp');
 
     $response->assertStatus(400);
+});
+
+it('can download a backup', function () {
+    $this->withoutMiddleware();
+
+    $zipPath = storage_path('test-zip');
+    File::ensureDirectoryExists($zipPath);
+    touch("{$zipPath}/testdownload.zip");
+
+    $response = $this->get('/backup/download/testdownload');
+
+    $response->assertOk();
+    $response->assertDownload('backup-testdownload.zip');
 });

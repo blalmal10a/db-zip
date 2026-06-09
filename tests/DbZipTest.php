@@ -21,8 +21,8 @@ beforeEach(function () {
 afterEach(function () {
     Schema::dropIfExists('test_table');
 
-    File::deleteDirectory(storage_path('app/public/test-backup'));
-    File::deleteDirectory(storage_path('app/public/test-zip'));
+    File::deleteDirectory(storage_path('test-backup'));
+    File::deleteDirectory(storage_path('test-zip'));
 });
 
 it('can list tables and get schema', function () {
@@ -82,7 +82,7 @@ it('can zip backup and clean up csv folder', function () {
     $zipPath = $dbZip->zipBackup('12345');
 
     expect(File::exists($zipPath))->toBeTrue();
-    expect(File::isDirectory(storage_path('app/public/test-backup/12345')))->toBeFalse();
+    expect(File::isDirectory(storage_path('test-backup/12345')))->toBeFalse();
 });
 
 it('can restore table from csv', function () {
@@ -142,7 +142,7 @@ it('can list backups', function () {
 
 it('can delete backup', function () {
     $dbZip = new DbZip;
-    $zipPath = storage_path('app/public/test-zip');
+    $zipPath = storage_path('test-zip');
     File::ensureDirectoryExists($zipPath);
     touch("{$zipPath}/testfile.zip");
 
@@ -150,4 +150,16 @@ it('can delete backup', function () {
 
     expect($deleted)->toBeTrue();
     expect(File::exists("{$zipPath}/testfile.zip"))->toBeFalse();
+});
+
+it('can download backup file', function () {
+    $dbZip = new DbZip;
+    $zipPath = storage_path('test-zip');
+    File::ensureDirectoryExists($zipPath);
+    touch("{$zipPath}/downloable.zip");
+
+    $filePath = $dbZip->downloadBackup('downloable');
+
+    expect($filePath)->toContain('test-zip/downloable.zip');
+    expect(File::exists($filePath))->toBeTrue();
 });

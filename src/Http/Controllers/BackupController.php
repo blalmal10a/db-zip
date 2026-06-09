@@ -35,7 +35,7 @@ class BackupController extends Controller
             'tables' => $tables,
             'status' => 'success',
             'count' => count($backups),
-            'files' => array_column($backups, 'path'),
+            'files' => $backups,
         ]);
     }
 
@@ -70,12 +70,11 @@ class BackupController extends Controller
         }
 
         try {
-            $zipPath = $this->dbZip->zipBackup($timestamp);
+            $this->dbZip->zipBackup($timestamp);
 
             return response()->json([
                 'success' => true,
-                'message' => "Backup saved to zip/{$timestamp}.zip",
-                'url' => "/storage/{$timestamp}.zip",
+                'message' => "Backup saved as {$timestamp}.zip",
             ]);
         } catch (\RuntimeException $e) {
             $status = str_contains($e->getMessage(), 'not found') ? 400 : 500;
@@ -84,12 +83,23 @@ class BackupController extends Controller
         }
     }
 
+    public function download(string $fileName)
+    {
+        try {
+            $filePath = $this->dbZip->downloadBackup($fileName);
+
+            return response()->download($filePath, "backup-{$fileName}.zip");
+        } catch (\RuntimeException $e) {
+            abort(404, $e->getMessage());
+        }
+    }
+
     public function deleteZipByFileName(Request $request)
     {
         $fileName = $request->input('fileName');
 
         $deleted = $this->dbZip->deleteBackup($fileName);
-
+        logger('here');
         if ($deleted) {
             return response()->json([
                 'success' => true,
