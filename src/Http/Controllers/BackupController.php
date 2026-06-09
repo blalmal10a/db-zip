@@ -11,18 +11,31 @@ class BackupController extends Controller
 {
     public function __construct(protected DbZip $dbZip) {}
 
+    public function index()
+    {
+        return view('db-zip::backup');
+    }
+
     public function getTables(Request $request)
     {
         set_time_limit(300);
         ini_set('max_input_time', 300);
 
+        // 1. Get the default connection name (e.g., 'mysql')
         $connection = config('database.default');
+
+        // 2. Fetch the actual database name for that connection
+        $databaseName = config("database.connections.{$connection}.database");
+
         $timestamp = $request->input('timestamp', now()->timestamp);
 
+        // If your dbZip service expects the connection name, keep passing $connection here
         $schemaData = $this->dbZip->getTables($connection);
         $this->dbZip->saveSchemaJson($schemaData, $timestamp);
 
-        $tables = Schema::getTables($connection);
+        // 3. FIX: Pass the actual database name to getTables()
+        $tables = Schema::getTables(env('DB_DATABASE'));
+
         $backups = $this->dbZip->listBackups();
 
         return response()->json([

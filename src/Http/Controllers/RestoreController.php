@@ -10,6 +10,11 @@ class RestoreController extends Controller
 {
     public function __construct(protected DbZip $dbZip) {}
 
+    public function index()
+    {
+        return view('db-zip::restore');
+    }
+
     public function restoreTable(Request $request)
     {
         $request->validate([

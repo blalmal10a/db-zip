@@ -10,17 +10,26 @@ use ZipArchive;
 
 class DbZip
 {
-    public function getTables(string $database): array
+    public function getTables(string $connection): array
     {
-        $connection = config('database.default');
-        $tables = Schema::getTables($connection);
+        $databaseName = DB::connection()->getDatabaseName();
+        $tables = Schema::getTables($databaseName);
         $output = [];
+        $driverName = DB::connection($connection)->getDriverName();
 
         foreach ($tables as $table) {
             $tableName = $table['name'];
-            $createStatement = DB::select("SHOW CREATE TABLE `{$tableName}`");
-            $rawCreateSql = $createStatement[0]->{'Create Table'};
-            $output[] = "DROP TABLE IF EXISTS `{$tableName}`;\n".$rawCreateSql.';';
+
+            if ($driverName === 'sqlite') {
+                $row = DB::connection($connection)->select("SELECT sql FROM sqlite_master WHERE type='table' AND name=?", [$tableName]);
+                if (! empty($row[0]->sql)) {
+                    $output[] = "DROP TABLE IF EXISTS `{$tableName}`;\n" . $row[0]->sql . ';';
+                }
+            } else {
+                $createStatement = DB::connection($connection)->select("SHOW CREATE TABLE `{$tableName}`");
+                $rawCreateSql = $createStatement[0]->{'Create Table'};
+                $output[] = "DROP TABLE IF EXISTS `{$tableName}`;\n" . $rawCreateSql . ';';
+            }
         }
 
         return $output;
@@ -99,7 +108,7 @@ class DbZip
 
         $zip->close();
 
-        File::deleteDirectory($backupPath);
+        // File::deleteDirectory($backupPath);
 
         return $zipFile;
     }
@@ -219,6 +228,7 @@ class DbZip
 
     public function deleteBackup(string $fileName): bool
     {
+        return false;
         $zipPath = $this->getZipPath();
         $filePath = "{$zipPath}/{$fileName}.zip";
 
@@ -232,14 +242,14 @@ class DbZip
     protected function getBackupPath(string $timestamp): string
     {
         $backupPath = config('db-zip.backup_path', 'backup');
-
-        return storage_path("app/public/{$backupPath}/{$timestamp}");
+        return public_path("storage/{$backupPath}");
+        // return storage_path("app/public/{$backupPath}/{$timestamp}");
     }
 
     protected function getZipPath(): string
     {
         $zipPath = config('db-zip.zip_path', 'zip');
-
-        return storage_path("app/public/{$zipPath}");
+        return public_path("storage/{$zipPath}");
+        // return storage_path("app/public/{$zipPath}");
     }
 }

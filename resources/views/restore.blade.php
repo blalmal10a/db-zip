@@ -300,7 +300,8 @@
         progressWrap.classList.add('visible');
         setProgress(0, csvFiles.length);
 
-        let successCount = 0, errorCount = 0;
+        let successCount = 0,
+            errorCount = 0;
 
         for (let i = 0; i < csvFiles.length; i++) {
             const zipEntry = csvFiles[i];
@@ -312,7 +313,9 @@
             appendLogRow(rowId, cleanName, 'Uploading…', 'badge-uploading');
 
             const blob = await zipEntry.async('blob');
-            const fileObject = new File([blob], cleanName, { type: 'text/csv' });
+            const fileObject = new File([blob], cleanName, {
+                type: 'text/csv'
+            });
 
             const ok = await uploadAndRestoreFile(fileObject, tableSQL, rowId);
             ok ? successCount++ : errorCount++;
@@ -365,7 +368,9 @@
             const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}';
             const response = await fetch('/backup/restore', {
                 method: 'POST',
-                headers: { 'X-CSRF-TOKEN': csrf },
+                headers: {
+                    'X-CSRF-TOKEN': csrf
+                },
                 body: formData,
             });
 
@@ -378,6 +383,7 @@
             updateBadge(rowId, '✓ Success', 'badge-success');
             return true;
         } catch (err) {
+            console.log(file)
             updateBadge(rowId, `✗ ${err.message}`, 'badge-error');
             return false;
         }
