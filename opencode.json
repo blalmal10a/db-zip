@@ -10,5 +10,11 @@
                 "boost:mcp"
             ]
         }
-    }
+    },
+    "plugin": [
+        "oh-my-opencode",
+        "opencode-notify",
+        "opencode-worktree",
+        "opencode-conductor"
+    ]
 }
