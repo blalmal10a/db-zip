@@ -23,12 +23,12 @@ class DbZip
             if ($driverName === 'sqlite') {
                 $row = DB::connection($connection)->select("SELECT sql FROM sqlite_master WHERE type='table' AND name=?", [$tableName]);
                 if (! empty($row[0]->sql)) {
-                    $output[] = "DROP TABLE IF EXISTS `{$tableName}`;\n" . $row[0]->sql . ';';
+                    $output[] = "DROP TABLE IF EXISTS `{$tableName}`;\n".$row[0]->sql.';';
                 }
             } else {
                 $createStatement = DB::connection($connection)->select("SHOW CREATE TABLE `{$tableName}`");
                 $rawCreateSql = $createStatement[0]->{'Create Table'};
-                $output[] = "DROP TABLE IF EXISTS `{$tableName}`;\n" . $rawCreateSql . ';';
+                $output[] = "DROP TABLE IF EXISTS `{$tableName}`;\n".$rawCreateSql.';';
             }
         }
 
@@ -242,6 +242,7 @@ class DbZip
     protected function getBackupPath(string $timestamp): string
     {
         $backupPath = config('db-zip.backup_path', 'backup');
+
         return public_path("storage/{$backupPath}");
         // return storage_path("app/public/{$backupPath}/{$timestamp}");
     }
@@ -249,6 +250,7 @@ class DbZip
     protected function getZipPath(): string
     {
         $zipPath = config('db-zip.zip_path', 'zip');
+
         return public_path("storage/{$zipPath}");
         // return storage_path("app/public/{$zipPath}");
     }
