@@ -8,11 +8,13 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::create('db_zip_table', function (Blueprint $table) {
+        Schema::create('db_zips', function (Blueprint $table) {
             $table->id();
-
-            // add fields
-
+            $table->string('file_name');
+            $table->timestamp('backup_at');
+            $table->integer('table_count')->default(0);
+            $table->bigInteger('size_bytes')->nullable();
+            $table->string('status')->default('completed');
             $table->timestamps();
         });
     }

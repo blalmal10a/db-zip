@@ -2,9 +2,9 @@
 
 namespace Blalmal10a\DbZip\Tests;
 
+use Blalmal10a\DbZip\DbZipServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Orchestra\Testbench\TestCase as Orchestra;
-use Blalmal10a\DbZip\DbZipServiceProvider;
 
 class TestCase extends Orchestra
 {
