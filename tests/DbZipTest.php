@@ -43,21 +43,31 @@ it('can save schema json file', function () {
     expect(File::exists($path))->toBeTrue();
 });
 
-it('can export table to csv', function () {
-    DB::table('test_table')->insert([
-        ['name' => 'Alice', 'email' => 'alice@test.com'],
-        ['name' => 'Bob', 'email' => 'bob@test.com'],
-    ]);
+it('can export table to csv chunks of 400', function () {
+    $rows = [];
+    for ($i = 1; $i <= 450; $i++) {
+        $rows[] = ['name' => "User {$i}", 'email' => "user{$i}@test.com"];
+    }
+    DB::table('test_table')->insert($rows);
 
     $dbZip = new DbZip;
-    $path = $dbZip->exportTableToCsv('test_table', '12345');
+    $files = $dbZip->exportTableToCsv('test_table', '12345');
 
-    expect($path)->toContain('test-backup/12345/test_table.csv');
-    expect(File::exists($path))->toBeTrue();
+    expect($files)->toBeArray();
+    expect(count($files))->toBe(2);
 
-    $content = File::get($path);
-    expect($content)->toContain('Alice');
-    expect($content)->toContain('bob@test.com');
+    expect($files[0])->toContain('test_table_001.csv');
+    expect($files[1])->toContain('test_table_002.csv');
+    expect(File::exists($files[0]))->toBeTrue();
+    expect(File::exists($files[1]))->toBeTrue();
+
+    $content1 = File::get($files[0]);
+    expect($content1)->toContain('User 1');
+    expect($content1)->toContain('User 400');
+
+    $content2 = File::get($files[1]);
+    expect($content2)->toContain('User 401');
+    expect($content2)->toContain('User 450');
 });
 
 it('can zip backup and clean up csv folder', function () {
@@ -106,6 +116,20 @@ it('can restore table with schema recreation', function () {
 
     $row = DB::table('test_table')->first();
     expect($row->name)->toBe('Charlie');
+});
+
+it('can append rows without truncating on restore', function () {
+    DB::table('test_table')->insert([
+        ['name' => 'Existing', 'email' => 'existing@test.com'],
+    ]);
+
+    $csvContent = "name,email\nAppended,appended@test.com";
+
+    $dbZip = new DbZip;
+    $dbZip->restoreTable('test_table', $csvContent, null, true);
+
+    $count = DB::table('test_table')->count();
+    expect($count)->toBe(2);
 });
 
 it('can list backups', function () {

@@ -21,21 +21,14 @@ class BackupController extends Controller
         set_time_limit(300);
         ini_set('max_input_time', 300);
 
-        // 1. Get the default connection name (e.g., 'mysql')
         $connection = config('database.default');
-
-        // 2. Fetch the actual database name for that connection
         $databaseName = config("database.connections.{$connection}.database");
-
         $timestamp = $request->input('timestamp', now()->timestamp);
 
-        // If your dbZip service expects the connection name, keep passing $connection here
         $schemaData = $this->dbZip->getTables($connection);
         $this->dbZip->saveSchemaJson($schemaData, $timestamp);
 
-        // 3. FIX: Pass the actual database name to getTables()
-        $tables = Schema::getTables(env('DB_DATABASE'));
-
+        $tables = Schema::getTables($databaseName);
         $backups = $this->dbZip->listBackups();
 
         return response()->json([
@@ -59,11 +52,12 @@ class BackupController extends Controller
 
         $timestamp = $request->input('timestamp', now()->timestamp);
 
-        $this->dbZip->exportTableToCsv($tableName, $timestamp);
+        $files = $this->dbZip->exportTableToCsv($tableName, $timestamp);
 
         return response()->json([
             'success' => true,
             'message' => "Table '{$tableName}' saved to backup/{$timestamp}/",
+            'chunks' => count($files),
         ]);
     }
 

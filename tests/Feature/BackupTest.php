@@ -48,6 +48,7 @@ it('can export a table', function () {
     $response->assertJson([
         'success' => true,
     ]);
+    $response->assertJsonStructure(['chunks']);
 });
 
 it('returns 400 for non-existent table', function () {

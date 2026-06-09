@@ -12,6 +12,7 @@ class RestoreController extends Controller
 
     public function index()
     {
+        // return ['what the fucks'];
         return view('db-zip::restore');
     }
 
@@ -27,11 +28,12 @@ class RestoreController extends Controller
 
         $file = $request->file('file');
         $tableSQL = $request->input('table_sql');
-        $tableName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-
+        $append = $request->boolean('append');
+        $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+        $tableName = preg_replace('/_\d+$/', '', $originalName);
         try {
             $csvContent = file_get_contents($file->getRealPath());
-            $this->dbZip->restoreTable($tableName, $csvContent, $tableSQL);
+            $this->dbZip->restoreTable($tableName, $csvContent, $tableSQL, $append);
 
             return response()->json([
                 'success' => true,

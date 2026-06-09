@@ -2,21 +2,32 @@
 
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 beforeEach(function () {
     Config::set('db-zip.backup_path', 'test-backup');
     Config::set('db-zip.zip_path', 'test-zip');
-});
-
-it('can restore a table from csv upload', function () {
-    $this->withoutMiddleware();
 
     Schema::create('restore_test', function ($table) {
         $table->id();
         $table->string('name');
         $table->string('email')->nullable();
     });
+
+    Schema::create('restore_appends', function ($table) {
+        $table->id();
+        $table->string('name');
+    });
+});
+
+afterEach(function () {
+    Schema::dropIfExists('restore_test');
+    Schema::dropIfExists('restore_appends');
+});
+
+it('can restore a table from csv upload', function () {
+    $this->withoutMiddleware();
 
     $csvContent = "name,email\nAlice,alice@test.com\nBob,bob@test.com";
     $file = UploadedFile::fake()->createWithContent('restore_test.csv', $csvContent);
@@ -28,8 +39,6 @@ it('can restore a table from csv upload', function () {
     $response->assertOk();
     $response->assertJson(['success' => true]);
     $response->assertJsonPath('message', "Table 'restore_test' successfully restored.");
-
-    Schema::dropIfExists('restore_test');
 });
 
 it('can restore a table with schema sql', function () {
@@ -49,6 +58,26 @@ it('can restore a table with schema sql', function () {
     $response->assertJson(['success' => true]);
 
     Schema::dropIfExists('restore_test_schema');
+});
+
+it('can append rows without truncating existing data', function () {
+    $this->withoutMiddleware();
+
+    DB::table('restore_appends')->insert(['name' => 'Existing']);
+
+    $csvContent = "name\nAppended";
+    $file = UploadedFile::fake()->createWithContent('restore_appends.csv', $csvContent);
+
+    $response = $this->post('/backup/restore', [
+        'file' => $file,
+        'append' => '1',
+    ]);
+
+    $response->assertOk();
+    $response->assertJson(['success' => true]);
+
+    $count = DB::table('restore_appends')->count();
+    expect($count)->toBe(2);
 });
 
 it('validates file upload', function () {

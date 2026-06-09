@@ -23,12 +23,12 @@ class DbZip
             if ($driverName === 'sqlite') {
                 $row = DB::connection($connection)->select("SELECT sql FROM sqlite_master WHERE type='table' AND name=?", [$tableName]);
                 if (! empty($row[0]->sql)) {
-                    $output[] = "DROP TABLE IF EXISTS `{$tableName}`;\n" . $row[0]->sql . ';';
+                    $output[] = "DROP TABLE IF EXISTS `{$tableName}`;\n".$row[0]->sql.';';
                 }
             } else {
                 $createStatement = DB::connection($connection)->select("SHOW CREATE TABLE `{$tableName}`");
                 $rawCreateSql = $createStatement[0]->{'Create Table'};
-                $output[] = "DROP TABLE IF EXISTS `{$tableName}`;\n" . $rawCreateSql . ';';
+                $output[] = "DROP TABLE IF EXISTS `{$tableName}`;\n".$rawCreateSql.';';
             }
         }
 
@@ -44,22 +44,25 @@ class DbZip
         return "{$path}/tables.json";
     }
 
-    public function exportTableToCsv(string $tableName, string $timestamp): string
+    public function exportTableToCsv(string $tableName, string $timestamp): array
     {
         $path = $this->getBackupPath($timestamp);
         File::ensureDirectoryExists($path);
 
-        $filePath = "{$path}/{$tableName}.csv";
-        $fileHandle = fopen($filePath, 'w');
-
         $headers = Schema::getColumnListing($tableName);
-        fputcsv($fileHandle, $headers);
-
         $pk = $headers[0] ?? 'id';
+        $chunkNumber = 0;
+        $files = [];
 
         DB::table($tableName)
             ->orderBy($pk)
-            ->chunk(10000, function ($rows) use ($fileHandle) {
+            ->chunk(400, function ($rows) use ($path, $tableName, $headers, &$chunkNumber, &$files) {
+                $chunkNumber++;
+                $suffix = str_pad((string) $chunkNumber, 3, '0', STR_PAD_LEFT);
+                $filePath = "{$path}/{$tableName}_{$suffix}.csv";
+                $fileHandle = fopen($filePath, 'w');
+                fputcsv($fileHandle, $headers);
+
                 foreach ($rows as $row) {
                     $arrayRow = array_values((array) $row);
                     $sanitizedRow = array_map(function ($value) {
@@ -74,11 +77,12 @@ class DbZip
                     }, $arrayRow);
                     fputcsv($fileHandle, $sanitizedRow);
                 }
+
+                fclose($fileHandle);
+                $files[] = $filePath;
             });
 
-        fclose($fileHandle);
-
-        return $filePath;
+        return $files;
     }
 
     public function zipBackup(string $timestamp): string
@@ -108,25 +112,27 @@ class DbZip
 
         $zip->close();
 
-        // File::deleteDirectory($backupPath);
+        File::deleteDirectory($backupPath);
 
         return $zipFile;
     }
 
-    public function restoreTable(string $tableName, string $csvContent, ?string $tableSQL = null): void
+    public function restoreTable(string $tableName, string $csvContent, ?string $tableSQL = null, bool $append = false): void
     {
-        if ($tableSQL !== null) {
-            Schema::disableForeignKeyConstraints();
-            DB::unprepared($tableSQL);
-            Schema::enableForeignKeyConstraints();
-        } else {
-            if (! Schema::hasTable($tableName)) {
-                throw new \RuntimeException("Table '{$tableName}' does not exist and no schema was provided.");
-            }
+        if (! $append) {
+            if ($tableSQL !== null) {
+                Schema::disableForeignKeyConstraints();
+                DB::unprepared($tableSQL);
+                Schema::enableForeignKeyConstraints();
+            } else {
+                if (! Schema::hasTable($tableName)) {
+                    throw new \RuntimeException("Table '{$tableName}' does not exist and no schema was provided.");
+                }
 
-            Schema::disableForeignKeyConstraints();
-            DB::table($tableName)->truncate();
-            Schema::enableForeignKeyConstraints();
+                Schema::disableForeignKeyConstraints();
+                DB::table($tableName)->truncate();
+                Schema::enableForeignKeyConstraints();
+            }
         }
 
         $rows = explode("\n", trim($csvContent));
@@ -228,7 +234,6 @@ class DbZip
 
     public function deleteBackup(string $fileName): bool
     {
-        return false;
         $zipPath = $this->getZipPath();
         $filePath = "{$zipPath}/{$fileName}.zip";
 
@@ -242,14 +247,14 @@ class DbZip
     protected function getBackupPath(string $timestamp): string
     {
         $backupPath = config('db-zip.backup_path', 'backup');
-        return public_path("storage/{$backupPath}");
-        // return storage_path("app/public/{$backupPath}/{$timestamp}");
+
+        return storage_path("app/public/{$backupPath}/{$timestamp}");
     }
 
     protected function getZipPath(): string
     {
         $zipPath = config('db-zip.zip_path', 'zip');
-        return public_path("storage/{$zipPath}");
-        // return storage_path("app/public/{$zipPath}");
+
+        return storage_path("app/public/{$zipPath}");
     }
 }

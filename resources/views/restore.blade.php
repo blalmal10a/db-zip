@@ -121,23 +121,66 @@
         border-radius: 10px;
         border: 1px solid #e0e0e0;
         background: #fafafa;
-        max-height: 380px;
+        max-height: 500px;
         overflow-y: auto;
         padding: 14px 16px;
         font-size: 0.85rem;
         line-height: 1.7;
     }
 
-    .log-row {
+    .table-group {
+        margin: 4px 0;
+        border: 1px solid #e8e8e8;
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .table-group-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: #f5f5f5;
+        cursor: pointer;
+        user-select: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: background 0.15s;
+    }
+
+    .table-group-header:hover {
+        background: #eeeeee;
+    }
+
+    .table-group-header .toggle-icon {
+        font-size: 0.7rem;
+        transition: transform 0.2s;
+        color: #888;
+    }
+
+    .table-group-header .toggle-icon.collapsed {
+        transform: rotate(-90deg);
+    }
+
+    .table-group-body {
+        padding: 0;
+    }
+
+    .table-group-body.hidden {
+        display: none;
+    }
+
+    .chunk-row {
         display: flex;
         align-items: baseline;
         justify-content: space-between;
-        padding: 3px 0;
-        border-bottom: 1px solid #f0f0f0;
+        padding: 5px 12px 5px 28px;
+        border-top: 1px solid #f0f0f0;
+        font-size: 0.82rem;
     }
 
-    .log-row:last-child {
-        border-bottom: none;
+    .chunk-row:first-child {
+        border-top: none;
     }
 
     .log-name {
@@ -151,6 +194,7 @@
         border-radius: 999px;
         white-space: nowrap;
         margin-left: 10px;
+        flex-shrink: 0;
     }
 
     .badge-pending {
@@ -198,13 +242,32 @@
     .text-error {
         color: #c62828;
     }
+
+    .nginx-banner {
+        display: none;
+        margin-bottom: 16px;
+        padding: 12px 16px;
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        border-radius: 8px;
+        color: #856404;
+        font-size: 0.85rem;
+    }
+
+    .nginx-banner.visible {
+        display: block;
+    }
 </style>
 @endpush
 
 @section('content')
 <div class="card">
     <h2>Restore Database Backup</h2>
-    <p class="subtitle">Upload a ZIP archive containing <code>table.json</code> and one CSV per table.</p>
+    <p class="subtitle">Upload a ZIP archive containing <code>table.json</code> and CSV files per table.</p>
+
+    <div class="nginx-banner" id="nginx-banner">
+        Server rejected the request. File may be too large (server limit). Try a smaller backup or increase <code>client_max_body_size</code>.
+    </div>
 
     <div class="upload-area" id="drop-zone">
         <input type="file" id="backup-zip" accept=".zip">
@@ -239,6 +302,7 @@
     const progressWrap = document.getElementById('progress-wrap');
     const progressBar = document.getElementById('progress-bar');
     const progressLbl = document.getElementById('progress-label');
+    const nginxBanner = document.getElementById('nginx-banner');
 
     fileInput.addEventListener('change', () => onFileSelected(fileInput.files[0]));
 
@@ -265,11 +329,16 @@
 
     startBtn.addEventListener('click', startRestoreProcess);
 
+    function extractTableName(filename) {
+        return filename.replace(/_\d{3}\.csv$/i, '').replace(/\.csv$/i, '');
+    }
+
     async function startRestoreProcess() {
         if (!fileInput.files.length) return;
 
         startBtn.disabled = true;
         log.innerHTML = '';
+        nginxBanner.classList.remove('visible');
 
         const zipFile = fileInput.files[0];
 
@@ -297,30 +366,46 @@
 
         appendLog(`Found <strong>${csvFiles.length}</strong> CSV file(s).${schemaMap ? ` Schema loaded for <strong>${Object.keys(schemaMap).length}</strong> table(s).` : ' No <code>table.json</code> found — tables must already exist.'}<br>`);
 
+        const groups = groupCsvFiles(csvFiles);
+
         progressWrap.classList.add('visible');
-        setProgress(0, csvFiles.length);
+        setProgress(0, groups.length);
 
         let successCount = 0,
             errorCount = 0;
 
-        for (let i = 0; i < csvFiles.length; i++) {
-            const zipEntry = csvFiles[i];
-            const cleanName = zipEntry.name.split('/').pop();
-            const tableName = cleanName.replace(/\.csv$/i, '');
-            const tableSQL = schemaMap?.[tableName] ?? null;
+        for (let gi = 0; gi < groups.length; gi++) {
+            const group = groups[gi];
+            const groupId = `group-${gi}`;
 
-            const rowId = `row-${i}`;
-            appendLogRow(rowId, cleanName, 'Uploading…', 'badge-uploading');
+            const groupEl = buildGroupElement(groupId, group.tableName, group.files.length);
+            log.appendChild(groupEl);
 
-            const blob = await zipEntry.async('blob');
-            const fileObject = new File([blob], cleanName, {
-                type: 'text/csv'
-            });
+            let firstChunk = true;
 
-            const ok = await uploadAndRestoreFile(fileObject, tableSQL, rowId);
-            ok ? successCount++ : errorCount++;
+            for (let ci = 0; ci < group.files.length; ci++) {
+                const zipEntry = group.files[ci];
+                const cleanName = zipEntry.name.split('/').pop();
+                const chunkId = `${groupId}-chunk-${ci}`;
+                const rowEl = buildChunkRow(chunkId, cleanName, 'Uploading…', 'badge-uploading');
+                const body = groupEl.querySelector('.table-group-body');
+                body.appendChild(rowEl);
 
-            setProgress(i + 1, csvFiles.length);
+                const blob = await zipEntry.async('blob');
+                const fileObject = new File([blob], cleanName, {
+                    type: 'text/csv'
+                });
+
+                const tableSQL = firstChunk ? (schemaMap?.[group.tableName] ?? null) : '__append__';
+                firstChunk = false;
+
+                const ok = await uploadAndRestoreFile(fileObject, tableSQL, chunkId);
+                ok ? successCount++ : errorCount++;
+            }
+            if (errorCount) {
+                break;
+            }
+            setProgress(gi + 1, groups.length);
         }
 
         appendLog(
@@ -331,6 +416,52 @@
         );
 
         startBtn.disabled = false;
+    }
+
+    function groupCsvFiles(csvFiles) {
+        const map = {};
+        csvFiles.forEach(entry => {
+            const cleanName = entry.name.split('/').pop();
+            const tableName = extractTableName(cleanName);
+            if (!map[tableName]) map[tableName] = [];
+            map[tableName].push(entry);
+        });
+        return Object.entries(map).map(([tableName, files]) => ({
+            tableName,
+            files
+        }));
+    }
+
+    function buildGroupElement(groupId, tableName, chunkCount) {
+        const div = document.createElement('div');
+        div.className = 'table-group';
+        div.id = groupId;
+
+        const header = document.createElement('div');
+        header.className = 'table-group-header';
+        header.innerHTML = `<span class="toggle-icon collapsed">▼</span> 📦 ${tableName} (${chunkCount} chunk${chunkCount > 1 ? 's' : ''})`;
+
+        const body = document.createElement('div');
+        body.className = 'table-group-body hidden';
+        body.id = `${groupId}-body`;
+
+        header.addEventListener('click', () => {
+            const isHidden = body.classList.toggle('hidden');
+            header.querySelector('.toggle-icon').classList.toggle('collapsed', isHidden);
+        });
+
+        div.appendChild(header);
+        div.appendChild(body);
+        return div;
+    }
+
+    function buildChunkRow(id, name, badgeText, badgeClass) {
+        const row = document.createElement('div');
+        row.id = id;
+        row.className = 'chunk-row';
+        row.innerHTML = `<span class="log-name">📄 ${name}</span>
+                         <span class="badge ${badgeClass}">${badgeText}</span>`;
+        return row;
     }
 
     async function buildSchemaMap(zip) {
@@ -360,8 +491,11 @@
     async function uploadAndRestoreFile(file, tableSQL, rowId) {
         const formData = new FormData();
         formData.append('file', file);
-        if (tableSQL) {
+        if (tableSQL && tableSQL !== '__append__') {
             formData.append('table_sql', tableSQL);
+        }
+        if (tableSQL === '__append__') {
+            formData.append('append', '1');
         }
 
         try {
@@ -374,6 +508,16 @@
                 body: formData,
             });
 
+            const contentType = response.headers.get('content-type') || '';
+
+            if (contentType.includes('text/html') || contentType.includes('text/plain')) {
+                const text = await response.text();
+                if (text.includes('nginx') || text.includes('413') || text.includes('Request Entity Too Large')) {
+                    nginxBanner.classList.add('visible');
+                }
+                throw new Error(`Server returned HTML — possible nginx limit`);
+            }
+
             const result = await response.json();
 
             if (!response.ok) {
@@ -383,7 +527,6 @@
             updateBadge(rowId, '✓ Success', 'badge-success');
             return true;
         } catch (err) {
-            console.log(file)
             updateBadge(rowId, `✗ ${err.message}`, 'badge-error');
             return false;
         }
@@ -393,16 +536,6 @@
         const el = document.createElement('div');
         el.innerHTML = html;
         log.appendChild(el);
-        log.scrollTop = log.scrollHeight;
-    }
-
-    function appendLogRow(id, name, badgeText, badgeClass) {
-        const row = document.createElement('div');
-        row.id = id;
-        row.className = 'log-row';
-        row.innerHTML = `<span class="log-name">📄 ${name}</span>
-                     <span class="badge ${badgeClass}">${badgeText}</span>`;
-        log.appendChild(row);
         log.scrollTop = log.scrollHeight;
     }
 
