@@ -14,7 +14,9 @@
 composer require blalmal10a/db-zip
 ```
 
-The package works immediately after installation — no migrations, no setup required.
+The package works immediately after installation — no migrations, no setup required.\
+- You can simply go to /backup to backup your current database
+- And /restore to restore the exported .zip files
 
 ### Optional — Publish config (to customise behaviour)
 
