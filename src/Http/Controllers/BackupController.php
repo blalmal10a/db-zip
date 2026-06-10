@@ -3,23 +3,29 @@
 namespace Blalmal10a\DbZip\Http\Controllers;
 
 use Blalmal10a\DbZip\DbZip;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\View\View;
 
 class BackupController extends Controller
 {
-    public function __construct(protected DbZip $dbZip) {}
+    public function __construct(protected DbZip $dbZip)
+    {
+    }
 
-    public function index()
+    public function index(): View
     {
         return view('db-zip::backup');
     }
 
-    public function getTables(Request $request)
+    public function getTables(Request $request): JsonResponse
     {
-        set_time_limit(300);
-        ini_set('max_input_time', 300);
+        if (function_exists('set_time_limit')) {
+            set_time_limit(300);
+        }
 
         $connection = config('database.default');
         $databaseName = config("database.connections.{$connection}.database");
@@ -39,10 +45,11 @@ class BackupController extends Controller
         ]);
     }
 
-    public function backupTable(Request $request)
+    public function backupTable(Request $request): JsonResponse
     {
-        set_time_limit(300);
-        ini_set('max_input_time', 300);
+        if (function_exists('set_time_limit')) {
+            set_time_limit(300);
+        }
 
         $tableName = $request->input('table-name');
 
@@ -61,7 +68,7 @@ class BackupController extends Controller
         ]);
     }
 
-    public function zipFolder(Request $request)
+    public function zipFolder(Request $request): JsonResponse
     {
         $timestamp = $request->input('timestamp');
 
@@ -77,29 +84,27 @@ class BackupController extends Controller
                 'message' => "Backup saved as {$timestamp}.zip",
             ]);
         } catch (\RuntimeException $e) {
-            $status = str_contains($e->getMessage(), 'not found') ? 400 : 500;
-
-            return response()->json(['error' => $e->getMessage()], $status);
+            return response()->json(['error' => 'Backup failed.'], 500);
         }
     }
 
-    public function download(string $fileName)
+    public function download(string $fileName): \Symfony\Component\HttpFoundation\Response
     {
+        logger('filename: '.$fileName);
         try {
             $filePath = $this->dbZip->downloadBackup($fileName);
 
             return response()->download($filePath, "backup-{$fileName}.zip");
         } catch (\RuntimeException $e) {
-            abort(404, $e->getMessage());
+            Log::warning('Backup download failed: '.$e->getMessage());
+            abort(404, 'Backup file not found.');
         }
     }
 
-    public function deleteZipByFileName(Request $request)
+    public function deleteZipByFileName(string $fileName): JsonResponse
     {
-        $fileName = $request->input('fileName');
-
         $deleted = $this->dbZip->deleteBackup($fileName);
-        logger('here');
+
         if ($deleted) {
             return response()->json([
                 'success' => true,

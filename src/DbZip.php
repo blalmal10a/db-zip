@@ -11,23 +11,24 @@ class DbZip
 {
     public function getTables(string $connection): array
     {
-        $databaseName = DB::connection()->getDatabaseName();
+        $databaseName = DB::connection($connection)->getDatabaseName();
         $tables = Schema::getTables($databaseName);
         $output = [];
         $driverName = DB::connection($connection)->getDriverName();
 
         foreach ($tables as $table) {
             $tableName = $table['name'];
+            $escapedTable = str_replace('`', '``', $tableName);
 
             if ($driverName === 'sqlite') {
                 $row = DB::connection($connection)->select("SELECT sql FROM sqlite_master WHERE type='table' AND name=?", [$tableName]);
-                if (! empty($row[0]->sql)) {
-                    $output[] = "DROP TABLE IF EXISTS `{$tableName}`;\n".$row[0]->sql.';';
+                if (! empty($row) && ! empty($row[0]->sql)) {
+                    $output[] = "DROP TABLE IF EXISTS `{$escapedTable}`;\n".$row[0]->sql.';';
                 }
             } else {
-                $createStatement = DB::connection($connection)->select("SHOW CREATE TABLE `{$tableName}`");
+                $createStatement = DB::connection($connection)->select("SHOW CREATE TABLE `{$escapedTable}`");
                 $rawCreateSql = $createStatement[0]->{'Create Table'};
-                $output[] = "DROP TABLE IF EXISTS `{$tableName}`;\n".$rawCreateSql.';';
+                $output[] = "DROP TABLE IF EXISTS `{$escapedTable}`;\n".$rawCreateSql.';';
             }
         }
 
@@ -38,7 +39,7 @@ class DbZip
     {
         $path = $this->getBackupPath($timestamp);
         File::ensureDirectoryExists($path);
-        File::put("{$path}/tables.json", json_encode($schemaData, JSON_PRETTY_PRINT));
+        File::put("{$path}/tables.json", json_encode($schemaData, JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR));
 
         return "{$path}/tables.json";
     }
@@ -60,20 +61,14 @@ class DbZip
                 $suffix = str_pad((string) $chunkNumber, 3, '0', STR_PAD_LEFT);
                 $filePath = "{$path}/{$tableName}_{$suffix}.csv";
                 $fileHandle = fopen($filePath, 'w');
+                if ($fileHandle === false) {
+                    throw new \RuntimeException("Failed to create CSV file: {$filePath}");
+                }
                 fputcsv($fileHandle, $headers);
 
                 foreach ($rows as $row) {
                     $arrayRow = array_values((array) $row);
-                    $sanitizedRow = array_map(function ($value) {
-                        if ($value === null) {
-                            return '';
-                        }
-                        if ($value === '') {
-                            return '""';
-                        }
-
-                        return $value;
-                    }, $arrayRow);
+                    $sanitizedRow = array_map(fn ($value) => $value ?? '', $arrayRow);
                     fputcsv($fileHandle, $sanitizedRow);
                 }
 
@@ -134,11 +129,10 @@ class DbZip
             }
         }
 
-        $rows = explode("\n", trim($csvContent));
-        $headerLine = array_shift($rows);
+        $lines = preg_split('/\r\n|\n\r|\n/', $csvContent);
+        $headerLine = array_shift($lines);
+        $headerLine = ltrim($headerLine, "\xEF\xBB\xBF");
         $headers = str_getcsv($headerLine);
-
-        $headers[0] = preg_replace('/[\x00-\x1F\x80-\xFF]/', '', $headers[0]);
 
         $jsonColumns = [];
         foreach ($headers as $column) {
@@ -158,7 +152,7 @@ class DbZip
         DB::beginTransaction();
 
         try {
-            foreach ($rows as $line) {
+            foreach ($lines as $line) {
                 $line = trim($line);
                 if (empty($line)) {
                     continue;
@@ -174,7 +168,7 @@ class DbZip
                 foreach ($rowData as $key => $value) {
                     $trimmedValue = trim($value);
 
-                    if (in_array($key, $jsonColumns)) {
+                    if (in_array($key, $jsonColumns, true)) {
                         if ($trimmedValue === '') {
                             $rowData[$key] = null;
                         } else {
@@ -214,7 +208,16 @@ class DbZip
     public function downloadBackup(string $fileName): string
     {
         $zipPath = $this->getZipPath();
-        $filePath = "{$zipPath}/{$fileName}.zip";
+
+        $safeName = basename($fileName);
+        $filePath = "{$zipPath}/{$safeName}.zip";
+        logger($filePath);
+        $realZipPath = realpath($zipPath);
+        $realFilePath = realpath($filePath);
+
+        if ($realZipPath === false || $realFilePath === false || ! str_starts_with($realFilePath, $realZipPath)) {
+            throw new \RuntimeException("Backup file '{$fileName}.zip' not found.");
+        }
 
         if (! File::exists($filePath)) {
             throw new \RuntimeException("Backup file '{$fileName}.zip' not found.");
@@ -239,7 +242,7 @@ class DbZip
             return [
                 'name' => $name,
                 'filename' => $file->getFilename(),
-                'download_url' => url("/backup/download/{$name}"),
+                'download_url' => route('backup.download', $name, false),
                 'size' => $file->getSize(),
                 'last_modified' => $file->getMTime(),
             ];
@@ -249,7 +252,15 @@ class DbZip
     public function deleteBackup(string $fileName): bool
     {
         $zipPath = $this->getZipPath();
-        $filePath = "{$zipPath}/{$fileName}.zip";
+        $safeName = basename($fileName);
+        $filePath = "{$zipPath}/{$safeName}.zip";
+
+        $realZipPath = realpath($zipPath);
+        $realFilePath = realpath($filePath);
+
+        if ($realZipPath === false || $realFilePath === false || ! str_starts_with($realFilePath, $realZipPath)) {
+            return false;
+        }
 
         if (File::exists($filePath)) {
             return File::delete($filePath);
@@ -262,13 +273,13 @@ class DbZip
     {
         $backupPath = config('db-zip.backup_path', 'backup');
 
-        return storage_path("{$backupPath}/{$timestamp}");
+        return storage_path("app/{$backupPath}/{$timestamp}");
     }
 
     protected function getZipPath(): string
     {
         $zipPath = config('db-zip.zip_path', 'zip');
 
-        return storage_path("{$zipPath}");
+        return storage_path("app/{$zipPath}");
     }
 }
