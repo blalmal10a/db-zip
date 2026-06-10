@@ -1,8 +1,9 @@
 # Easily backup and restore Laravel database tables by saving them into zip files.
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/blalmal10a/db-zip.svg?style=flat-square)](https://packagist.org/packages/blalmal10a/db-zip)
-[![GitHub Tests Action Status](https://github.com/spatie/package-db-zip-laravel/actions/workflows/run-tests.yml/badge.svg)](https://github.com/blalmal10a/db-zip/actions?query=workflow%3Arun-tests+branch%3Amain)
-[![GitHub Code Style Action Status](https://github.com/spatie/package-db-zip-laravel/actions/workflows/fix-php-code-style-issues.yml/badge.svg)](https://github.com/blalmal10a/db-zip/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/blalmal10-a/db-zip.svg?style=flat-square)](https://packagist.org/packages/blalmal10-a/db-zip)
+[![Fix PHP code style issues](https://github.com/blalmal10a/db-zip/actions/workflows/fix-php-code-style-issues.yml/badge.svg)](https://github.com/blalmal10a/db-zip/actions/workflows/fix-php-code-style-issues.yml)
+[![run-tests](https://github.com/blalmal10a/db-zip/actions/workflows/run-tests.yml/badge.svg)](https://github.com/blalmal10a/db-zip/actions/workflows/run-tests.yml)
+[![PHPStan](https://github.com/blalmal10a/db-zip/actions/workflows/phpstan.yml/badge.svg)](https://github.com/blalmal10a/db-zip/actions/workflows/phpstan.yml)
 [![Total Downloads](https://img.shields.io/packagist/dt/blalmal10a/db-zip.svg?style=flat-square)](https://packagist.org/packages/blalmal10a/db-zip)
 
 **db-zip** exports database tables into chunked CSV files (400 rows per chunk), packages them into a zip with schema JSON, and can restore tables from those zip files — all through a web UI or API.
