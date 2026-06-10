@@ -15,7 +15,6 @@ class DbZipServiceProvider extends PackageServiceProvider
             ->name('db-zip')
             ->hasConfigFile()
             ->hasViews()
-            ->hasMigration('create_db_zip_table')
             ->hasRoute('db-zip')
             ->hasCommand(DbZipCommand::class);
     }

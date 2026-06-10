@@ -8,16 +8,25 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
 
 class BackupController extends Controller
 {
-    public function __construct(protected DbZip $dbZip) {}
-
-    public function index(): View
+    public function __construct(protected DbZip $dbZip)
     {
-        return view('db-zip::backup');
+    }
+
+    public function index()
+    {
+        $route = config('db-zip.route');
+
+        if ($route) {
+            return view('db-zip::backup', [
+                'route' => $route,
+            ]);
+        }
+        abort(500);
+
     }
 
     public function getTables(Request $request): JsonResponse
@@ -89,7 +98,6 @@ class BackupController extends Controller
 
     public function download(string $fileName): Response
     {
-        logger('filename: '.$fileName);
         try {
             $filePath = $this->dbZip->downloadBackup($fileName);
 

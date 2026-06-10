@@ -14,74 +14,36 @@
 composer require blalmal10a/db-zip
 ```
 
-### Publish all assets (config, migrations, views)
+The package works immediately after installation — no migrations, no setup required.
+
+### Optional — Publish config (to customise behaviour)
 
 ```bash
-php artisan vendor:publish --provider="Blalmal10a\DbZip\DbZipServiceProvider"
+php artisan vendor:publish --tag="db-zip-config"
 ```
 
-### Publish individually
+### Optional — Publish views (to customise the UI)
 
 ```bash
-# Config
-php artisan vendor:publish --tag="db-zip-config"
-
-# Migrations
-php artisan vendor:publish --tag="db-zip-migrations"
-php artisan migrate
-
-# Views (optional — customize the UI)
 php artisan vendor:publish --tag="db-zip-views"
 ```
 
-### Publish controllers (optional — customize logic)
+Views are published to `resources/views/vendor/db-zip/`. Your layout can extend or replace `db-zip::layouts.app`.
 
-```bash
-php artisan vendor:publish --tag="db-zip-controllers"
-```
+## Default behaviour
 
-> After publishing controllers, update your `routes/db-zip.php` to point to the copied controllers (namespace `App\Http\Controllers\DbZip\`).
+| Behaviour | Default |
+|-----------|---------|
+| Auth required | Yes — routes use `web` + `auth` middleware |
+| Role required | `super_admin` (via Spatie Laravel Permission) |
+| Storage paths | `storage/backup/` (CSV temp) and `storage/zip/` (zip archives) |
+| Route prefix | None — routes sit at `/backup`, `/restore` |
 
-## Configuration
+## Authentication & role access
 
-Published config `config/db-zip.php`:
+Out of the box, all routes require an **authenticated user** with the **`super_admin` role** (via `spatie/laravel-permission`).
 
-```php
-return [
-    'backup_path' => 'backup', // storage path for temporary CSV files
-    'zip_path' => 'zip',       // storage path for final zip archives
-    'required_roles' => ['admin', 'super_admin'], // Spatie roles allowed access
-    'middleware_group' => ['web', 'auth'], // middleware applied to all routes
-];
-```
-
-Override in `.env` if needed:
-
-```dotenv
-DBZIP_BACKUP_PATH=backup
-DBZIP_ZIP_PATH=zip
-```
-
-## Routes
-
-| Method | URI | Action |
-|--------|-----|--------|
-| GET | `/backup` | Backup page (view) |
-| GET | `/backup/tables` | List tables with schemas |
-| POST | `/backup/export` | Export a table to chunked CSVs |
-| POST | `/backup/zip` | Zip exported CSVs into a backup file |
-| GET | `/backup/download/{fileName}` | Download a backup zip |
-| DELETE | `/delete-zip-file-by-name` | Delete a backup zip |
-| GET | `/restore` | Restore page (view) |
-| POST | `/backup/restore` | Upload and restore a zip |
-
-All routes are wrapped in the middleware group from `config('db-zip.middleware_group')`.
-
-## Role-based access
-
-This package requires [spatie/laravel-permission](https://spatie.be/docs/laravel-permission). Users must have at least one role listed in `config('db-zip.required_roles')` (default: `admin` or `super_admin`).
-
-### Quick setup
+### Quick role setup
 
 ```bash
 composer require spatie/laravel-permission
@@ -97,22 +59,115 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
     use HasRoles;
-    // ...
 }
 ```
 
-Create roles and assign to a user (e.g. in a seeder or tinker):
+Create the role and assign to a user:
 
 ```bash
 php artisan tinker --execute '
-    use Spatie\Permission\Models\Role;
-    use App\Models\User;
-
-    Role::create(["name" => "admin"]);
-    $user = User::find(1);
-    $user->assignRole("admin");
+    Spatie\Permission\Models\Role::create(["name" => "super_admin"]);
+    $user = App\Models\User::find(1);
+    $user->assignRole("super_admin");
 '
 ```
+
+### Bypassing or customising auth / roles
+
+You have full control via the published config. Run:
+
+```bash
+php artisan vendor:publish --tag="db-zip-config"
+```
+
+Then edit `config/db-zip.php`:
+
+```php
+// Disable role checks entirely
+'required_roles' => [],
+
+// Change the required roles to any set you want
+'required_roles' => ['admin', 'backup-operator'],
+
+// Change the middleware applied to all routes
+'middleware_group' => ['web'], // no auth middleware — accessible to all
+
+// Or use your own custom middleware group
+'middleware_group' => ['web', 'auth', 'custom-backup-guard'],
+```
+
+If you use a completely different authorisation system, you can also point the routes to your own controller classes:
+
+```php
+'controllers' => [
+    'backup' => App\Http\Controllers\MyBackupController::class,
+    'restore' => App\Http\Controllers\MyRestoreController::class,
+],
+```
+
+> Your custom controllers must implement the same public methods as the originals. Extend the package controllers and override only what you need:
+
+```php
+namespace App\Http\Controllers;
+
+use Blalmal10a\DbZip\Http\Controllers\BackupController as BaseBackupController;
+
+class MyBackupController extends BaseBackupController
+{
+    // override any method
+}
+```
+
+## Configuration reference
+
+Published config `config/db-zip.php`:
+
+```php
+return [
+    'backup_path' => env('DBZIP_BACKUP_PATH', 'backup'),
+    'zip_path' => env('DBZIP_ZIP_PATH', 'zip'),
+    'required_roles' => ['super_admin'],
+    'middleware_group' => ['web', 'auth'],
+    'route' => [
+        'backup_index' => '/backup',
+        'backup_tables' => '/backup/tables',
+        'backup_export' => '/backup/export',
+        'backup_zip' => '/backup/zip',
+        'backup_download' => '/backup/download/{fileName}',
+        'backup_delete' => '/backup/{fileName}',
+        'restore_index' => '/restore',
+        'backup_restore' => '/backup/restore',
+    ],
+    'controllers' => [
+        'backup' => Blalmal10a\DbZip\Http\Controllers\BackupController::class,
+        'restore' => Blalmal10a\DbZip\Http\Controllers\RestoreController::class,
+    ],
+];
+```
+
+Override paths via `.env`:
+
+```dotenv
+DBZIP_BACKUP_PATH=backup
+DBZIP_ZIP_PATH=zip
+```
+
+## Routes
+
+| Method | URI | Name |
+|--------|-----|------|
+| GET | `/backup` | `backup.index` |
+| GET | `/backup/tables` | `backup.tables` |
+| POST | `/backup/export` | `backup.export` |
+| POST | `/backup/zip` | `backup.zip` |
+| GET | `/backup/download/{fileName}` | `backup.download` |
+| DELETE | `/backup/{fileName}` | `backup.delete` |
+| GET | `/restore` | `restore.index` |
+| POST | `/backup/restore` | `backup.restore` |
+
+All routes are wrapped in the middleware group from `config('db-zip.middleware_group')` plus a `backup-role` check.
+
+Change any route path in the published config without touching the route file.
 
 ## Usage
 
@@ -153,34 +208,14 @@ use Blalmal10a\DbZip\DbZip;
 
 $dbZip = app(DbZip::class);
 
-// Export table to chunked CSV
 $dbZip->exportTableToCsv('users', now()->format('Y-m-d_Hi'));
-
-// Zip the backup
 $dbZip->zipBackup('2025-01-01_120000');
 
-// List backups
 $backups = $dbZip->listBackups();
-
-// Download path
 $path = $dbZip->downloadBackup('2025-01-01_120000');
-
-// Delete a backup
 $dbZip->deleteBackup('2025-01-01_120000');
-
-// Restore with schema recreation
 $dbZip->restoreTable('users', $csvContent, $tableSQL, append: false);
 ```
-
-### Customizing views
-
-After publishing views:
-
-```bash
-php artisan vendor:publish --tag="db-zip-views"
-```
-
-Edit the layout or override individual views. Your layout must extend `db-zip::layouts.app` or create your own at `resources/views/vendor/db-zip/layouts/app.blade.php`.
 
 ## Storage
 
