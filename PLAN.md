@@ -14,7 +14,7 @@
 - [x] `routes/db-zip.php` — config-driven routes
 - [x] `resources/views/` — backup, restore, layout views
 - [x] `database/migrations/create_db_zip_table.php.stub` — backup metadata table
-- [x] Pest tests — 18 passing
+- [x] Pest tests — 22 passing
 - [x] Verification — PHPStan 0 errors, Pint clean
 
 ## Done (v2 — Chunking + Restore UI)
@@ -31,8 +31,33 @@
 - [x] Fixed `zipBackup()` CSV cleanup (was commented out)
 - [x] Fixed path helpers for consistency between test and runtime
 
+## Done (v3 — Security hardening + Config-driven routes)
+
+- [x] SQL injection fix — backtick-escaped table names in all queries
+- [x] Path traversal fix — `basename()` in download/delete
+- [x] Connection isolation fix — `getDatabaseName()` uses correct connection param
+- [x] CSV robustness — `preg_split()` for Windows/Mac line endings; BOM stripped correctly
+- [x] `json_encode` uses `JSON_THROW_ON_ERROR`; `fopen` return checked
+- [x] Exception messages logged, not leaked to users in responses
+- [x] Removed debug `logger('here')` calls from controllers
+- [x] Removed `hasMigration()` from provider; deleted migration stub file and `src/Models/`
+- [x] Config: `required_roles` changed to `['super_admin']` only; `route` and `controllers` blocks added; `models` key removed
+- [x] Routes fully config-driven — all URIs from `config('db-zip.route.*')`
+- [x] Views receive `$route` object instead of hardcoded fetch URLs
+- [x] `method_exists($user, 'hasAnyRole')` guard in `CheckBackupRole` middleware
+
+## Done (v4 — Alpine.js rewrite, Tailwind CSS CDN)
+
+- [x] `resources/views/layouts/app.blade.php` — minimal skeleton, no inline styles
+- [x] `resources/views/backup.blade.php` — Alpine `x-data` component, all state reactive, async methods
+- [x] `resources/views/restore.blade.php` — Alpine `x-data` component, dynamic group/chunk rendering
+- [x] Tailwind CSS and Alpine.js loaded via CDN (`@tailwindcss/browser`, `alpinejs`)
+- [x] JSZip loaded via CDN for client-side ZIP parsing
+- [x] Test expectations updated for 500 (not 400) on zip-not-found; `downloable` → `downloadable` typo fixed
+- [x] 22 Pest tests passing, PHPStan 0 errors, Pint clean
+
 ## Verification
 
-- Run `composer test` — 21+ Pest tests
+- Run `composer test` — 22+ Pest tests
 - Run `composer analyse` — PHPStan level 5
 - Run `vendor/bin/pint` — code style

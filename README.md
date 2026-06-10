@@ -32,6 +32,8 @@ php artisan vendor:publish --tag="db-zip-views"
 
 Views are published to `resources/views/vendor/db-zip/`. Your layout can extend or replace `db-zip::layouts.app`.
 
+Views load Tailwind CSS and Alpine.js via CDN. No npm setup required.
+
 ## Default behaviour
 
 | Behaviour | Default |
