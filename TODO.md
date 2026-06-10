@@ -3,7 +3,6 @@
 ## CRITICAL — Fix Immediately
 
 - [ ] **composer.json#L22**: Move `orchestra/testbench` from `require` to `require-dev` — currently installs in production.
-- [ ] **composer.json#L27**: Remove `laravel/boost` from `require-dev` — not a real Packagist package, breaks `composer install` for everyone outside this environment.
 - [ ] **routes/db-zip.php#L7**: Routes hardcode `['web']` instead of reading `config('db-zip.middleware_group')` — no auth/role enforcement on any endpoint.
 - [ ] **routes/db-zip.php#L7-L17**: `backup-role` middleware registered in ServiceProvider but never applied to routes — dead code.
 
