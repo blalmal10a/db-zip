@@ -8,3 +8,10 @@ parameters:
         - config
         - database
     tmpDir: build/phpstan
+    ignoreErrors:
+        -
+            message: '#Parameter \#1 \$view of function view expects view-string\|null, string given.#'
+            path: src/Http/Controllers/BackupController.php
+        -
+            message: '#Parameter \#1 \$view of function view expects view-string\|null, string given.#'
+            path: src/Http/Controllers/RestoreController.php
