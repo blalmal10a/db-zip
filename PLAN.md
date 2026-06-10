@@ -46,15 +46,13 @@
 - [x] Views receive `$route` object instead of hardcoded fetch URLs
 - [x] `method_exists($user, 'hasAnyRole')` guard in `CheckBackupRole` middleware
 
-## Done (v4 — Alpine.js rewrite, Tailwind via npm)
+## Done (v4 — Alpine.js rewrite, Tailwind CSS CDN)
 
-- [x] `package.json` with `alpinejs ^3`, `tailwindcss ^4`, `@tailwindcss/cli ^4`
-- [x] `resources/views/layouts/app.blade.php` — minimal skeleton, no CDN, no inline styles
+- [x] `resources/views/layouts/app.blade.php` — minimal skeleton, no inline styles
 - [x] `resources/views/backup.blade.php` — Alpine `x-data` component, all state reactive, async methods
 - [x] `resources/views/restore.blade.php` — Alpine `x-data` component, dynamic group/chunk rendering
-- [x] JSZip remains on CDN (consumer can install via npm if preferred)
-- [x] No `@tailwindcss/browser` CDN script shipped; consumer app bundles Tailwind + Alpine
-- [x] `README.md` updated with consumer build setup instructions
+- [x] Tailwind CSS and Alpine.js loaded via CDN (`@tailwindcss/browser`, `alpinejs`)
+- [x] JSZip loaded via CDN for client-side ZIP parsing
 - [x] Test expectations updated for 500 (not 400) on zip-not-found; `downloable` → `downloadable` typo fixed
 - [x] 22 Pest tests passing, PHPStan 0 errors, Pint clean
 

@@ -30,55 +30,7 @@ php artisan vendor:publish --tag="db-zip-views"
 
 Views are published to `resources/views/vendor/db-zip/`. Your layout can extend or replace `db-zip::layouts.app`.
 
-### Frontend setup (Tailwind CSS + Alpine.js)
-
-The package views use Tailwind CSS utility classes and Alpine.js directives — no pre-compiled CSS is bundled.
-
-**1. Install the npm dependencies in your Laravel app:**
-
-```bash
-npm install alpinejs tailwindcss @tailwindcss/cli --save-dev
-```
-
-**2. Configure Tailwind to scan the package views:**
-
-In your `app.css` (or wherever you import Tailwind):
-```css
-@import "tailwindcss";
-```
-
-In `vite.config.js`, add the package views path to `content` (Tailwind v4 uses `@source` directives instead):
-
-```css
-/* In your main CSS file, after @import "tailwindcss": */
-@source "../../vendor/blalmal10a/db-zip/resources/views";
-```
-
-Alternatively, if using a Tailwind v3 `tailwind.config.js`:
-```js
-module.exports = {
-    content: [
-        './resources/views/**/*.blade.php',
-        './vendor/blalmal10a/db-zip/resources/views/**/*.blade.php',  // ← add this line
-    ],
-}
-```
-
-**3. Import Alpine.js in your app JS:**
-
-```js
-import Alpine from 'alpinejs'
-window.Alpine = Alpine
-Alpine.start()
-```
-
-**4. Build:**
-
-```bash
-npm run build
-```
-
-> Views use `[x-cloak]` for elements hidden on load. Add `[x-cloak] { display: none !important }` to your CSS if not already present.
+Views load Tailwind CSS and Alpine.js via CDN. No npm setup required.
 
 ## Default behaviour
 
