@@ -251,9 +251,9 @@ class DbZip
 
     public function deleteBackup(string $fileName): bool
     {
+
         $zipPath = $this->getZipPath();
-        $safeName = basename($fileName);
-        $filePath = "{$zipPath}/{$safeName}.zip";
+        $filePath = "{$zipPath}/{$fileName}.zip";
 
         $realZipPath = realpath($zipPath);
         $realFilePath = realpath($filePath);
