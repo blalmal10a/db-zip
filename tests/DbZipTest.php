@@ -156,10 +156,10 @@ it('can download backup file', function () {
     $dbZip = new DbZip;
     $zipPath = storage_path('test-zip');
     File::ensureDirectoryExists($zipPath);
-    touch("{$zipPath}/downloable.zip");
+    touch("{$zipPath}/downloadable.zip");
 
-    $filePath = $dbZip->downloadBackup('downloable');
+    $filePath = $dbZip->downloadBackup('downloadable');
 
-    expect($filePath)->toContain('test-zip/downloable.zip');
+    expect($filePath)->toContain('test-zip/downloadable.zip');
     expect(File::exists($filePath))->toBeTrue();
 });

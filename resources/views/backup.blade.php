@@ -475,16 +475,12 @@
         }
 
         async function deleteZipByFilename(fileName) {
-            await fetch('/delete-zip-file-by-name', {
+            await fetch(`/backup/${encodeURIComponent(fileName)}`, {
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ||
                         '{{ csrf_token() }}',
-                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    fileName
-                })
             });
         }
     </script>

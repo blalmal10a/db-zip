@@ -4,10 +4,11 @@ namespace Blalmal10a\DbZip\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class CheckBackupRole
 {
-    public function handle(Request $request, Closure $next)
+    public function handle(Request $request, Closure $next): Response
     {
         $roles = config('db-zip.required_roles', []);
 
@@ -17,8 +18,13 @@ class CheckBackupRole
 
         $user = $request->user();
 
-        /** @phpstan-ignore method.notFound */
-        abort_unless($user && $user->hasAnyRole($roles), 403);
+        if (! $user || ! method_exists($user, 'hasAnyRole')) {
+            abort(403, 'Access denied: role check requires Spatie Laravel Permission.');
+        }
+
+        if (! $user->hasAnyRole($roles)) {
+            abort(403);
+        }
 
         return $next($request);
     }

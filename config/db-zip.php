@@ -1,9 +1,9 @@
 <?php
 
 return [
-    'backup_path' => 'backup',
+    'backup_path' => env('DBZIP_BACKUP_PATH', 'backup'),
 
-    'zip_path' => 'zip',
+    'zip_path' => env('DBZIP_ZIP_PATH', 'zip'),
 
     'required_roles' => ['admin', 'super_admin'],
 

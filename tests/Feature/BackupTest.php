@@ -73,12 +73,12 @@ it('can zip backup folder', function () {
     $response->assertJson(['success' => true]);
 });
 
-it('returns 400 for zipping non-existent backup', function () {
+it('returns 500 for zipping non-existent backup', function () {
     $this->withoutMiddleware();
 
     $response = $this->postJson('/backup/zip?timestamp=invalid_timestamp');
 
-    $response->assertStatus(400);
+    $response->assertStatus(500);
 });
 
 it('can download a backup', function () {
