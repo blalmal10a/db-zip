@@ -2,27 +2,36 @@
 
 All notable changes to `db-zip` will be documented in this file.
 
+## v1.0.1 - 2026-06-10
+
+**Full Changelog**: https://github.com/blalmal10a/db-zip/compare/v1.0.0...v1.0.1
+
 ## [Unreleased]
 
 ### Chores
+
 - Update configuration files
 - Update installation command
 
 ### Bug Fixes
+
 - Fix styling
 
 ## [v1.0.1] - 2026-06-10
 
 ### Chores
+
 - Add post-install script
 
 ## [v1.0.0] - 2026-06-10
 
 ### Features
+
 - Make it highly customizable
 - General updates and improvements
 
 ### Bug Fixes
+
 - Fix styling
 
 ## [v0.1.0 / v0.0.2] - 2026-06-10
@@ -30,18 +39,22 @@ All notable changes to `db-zip` will be documented in this file.
 > Both tags point to the same commit.
 
 ### Features
+
 - Update file download
 
 ### Chores
+
 - Fix zip path
 - Miscellaneous updates
 
 ### Bug Fixes
+
 - Fix styling
 
 ## [v0.0.1] - 2026-06-10
 
 ### Features
+
 - Core database backup and restore functionality
 - Update backup and restore function
 - Increase chunk size to 400 rows
@@ -50,6 +63,7 @@ All notable changes to `db-zip` will be documented in this file.
 - Security update
 
 ### Chores
+
 - Project initialization and configuration
 - Laravel Boost initialization
 - Add sample files and scaffolding
@@ -63,7 +77,9 @@ All notable changes to `db-zip` will be documented in this file.
 - Neon configuration update
 
 ### Bug Fixes
+
 - Fix styling
 
 ### Other
+
 - Miscellaneous updates
