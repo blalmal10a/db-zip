@@ -12,7 +12,6 @@ class RestoreController extends Controller
 
     public function index()
     {
-        // return ['what the fucks'];
         return view('db-zip::restore');
     }
 
