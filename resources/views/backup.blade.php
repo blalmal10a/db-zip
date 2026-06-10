@@ -244,8 +244,6 @@
 
 @push('scripts')
     <script>
-        const dbZipRoute = @json($route ?? config('db-zip.route'));
-
         let totalTables = 0;
         let countDoneTable = 0;
         const timestamp = Date.now();
@@ -303,9 +301,9 @@
 
         async function initializeBackupDashboard() {
             try {
-                const response = await fetch(`${dbZipRoute.backup_tables}?timestamp=${timestamp}`);
+                const response = await fetch(`/backup/tables?timestamp=${timestamp}`);
+            existingList.innerHTML = '';
                 const data = await response.json();
-
                 if (data.files && data.files.length > 0) {
                     renderExistingFiles(data.files);
                 }
@@ -315,14 +313,14 @@
         }
 
         function renderExistingFiles(files) {
-            existingList.innerHTML = '';
 
             files.forEach(file => {
             let filePath = file.name
-                const ts = filePath.split('/').pop().replace('.zip', '');
-                const dt = new Date(parseInt(ts));
+                const timestamp = filePath.split('/').pop().replace('.zip', '');
+                const dt = new Date(parseInt(timestamp));
 
                 const fileName = `${toHyphenDateTime(dt)}.zip`;
+                const webPath = filePath.replace('public/', '/');
 
                 const row = document.createElement('div');
             row.className = 'download-row visible';
@@ -333,14 +331,17 @@
                     &#128230; <span>${fileName}</span>
                 </div>
                 <div>
-                    <a class="download-btn" href="${dbZipRoute.backup_download.replace('{fileName}', ts)}" download="${fileName}">&#8595; Download</a>
+                    <a class="download-btn" href="backup/download/${timestamp}" download="${fileName}">&#8595; Download</a>
                     <button class="btn delete-btn" style="margin-left: 8px;">Delete</button>
                 </div>
             `;
 
+            // 2. Target the button and attach the event listener cleanly
             row.querySelector('.delete-btn').onclick = async () => {
-                await deleteZipByFilename(ts);
-                initializeBackupDashboard();
+                await deleteZipByFilename(timestamp);
+                setTimeout(() => {
+                    initializeBackupDashboard();
+                }, 200);
             };
             existingList.appendChild(row);
             });
@@ -356,7 +357,7 @@
             appendLog('<em>Fetching table list…</em>');
 
             try {
-                const response = await fetch(`${dbZipRoute.backup_tables}?timestamp=${timestamp}`);
+                const response = await fetch(`/backup/tables?timestamp=${timestamp}`);
                 const data = await response.json();
 
                 const tablesArray = data.tables ? data.tables : data;
@@ -390,7 +391,7 @@
             const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
             try {
-                const response = await fetch(`${dbZipRoute.backup_export}?table-name=${tableName}&timestamp=${ts}`, {
+                const response = await fetch(`/backup/export?table-name=${tableName}&timestamp=${ts}`, {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ||
@@ -421,7 +422,7 @@
 
         async function zipFolder() {
             try {
-                const response = await fetch(`${dbZipRoute.backup_zip}?timestamp=${timestamp}`, {
+                const response = await fetch(`/backup/zip?timestamp=${timestamp}`, {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ||
@@ -444,7 +445,7 @@
                 const [date, time] = localeStr.split(', ');
                 const fileName = `${date.split('/').reverse().join('-')}-${time.replace(':', '_')}.zip`;
 
-                downloadLink.href = dbZipRoute.backup_download.replace('{fileName}', timestamp);
+                downloadLink.href = result.url;
                 downloadLink.download = fileName;
                 downloadFilenameText.textContent = fileName;
                 downloadRow.classList.add('visible');
@@ -475,7 +476,7 @@
         }
 
         async function deleteZipByFilename(fileName) {
-            await fetch(dbZipRoute.backup_delete.replace('{fileName}', encodeURIComponent(fileName)), {
+            await fetch(`/backup/${encodeURIComponent(fileName)}`, {
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ||

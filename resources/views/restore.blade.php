@@ -294,8 +294,6 @@
 @push('scripts')
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha384-+mbV2IY1Zk/X1p/nWllGySJSUN8uMs+gUAN10Or95UBH0fpj6GfKgPmgC5EXieXG" crossorigin="anonymous"></script>
 <script>
-    const dbZipRoute = @json($route ?? config('db-zip.route'));
-
     const fileInput = document.getElementById('backup-zip');
     const dropZone = document.getElementById('drop-zone');
     const fileNameEl = document.getElementById('file-name');
@@ -384,8 +382,13 @@
             log.appendChild(groupEl);
 
             let firstChunk = true;
+            let groupDone = 0;
 
             for (let ci = 0; ci < group.files.length; ci++) {
+                if (ci > 0) {
+                    await new Promise(r => setTimeout(r, 500));
+                }
+
                 const zipEntry = group.files[ci];
                 const cleanName = zipEntry.name.split('/').pop();
                 const chunkId = `${groupId}-chunk-${ci}`;
@@ -403,6 +406,9 @@
 
                 const ok = await uploadAndRestoreFile(fileObject, tableSQL, chunkId);
                 ok ? successCount++ : errorCount++;
+                groupDone++;
+
+                updateGroupProgress(groupId, groupDone, group.files.length);
             }
             if (errorCount) {
                 break;
@@ -441,7 +447,7 @@
 
         const header = document.createElement('div');
         header.className = 'table-group-header';
-        header.innerHTML = `<span class="toggle-icon collapsed">▼</span> 📦 ${tableName} (${chunkCount} chunk${chunkCount > 1 ? 's' : ''})`;
+        header.innerHTML = `<span class="toggle-icon collapsed">▼</span> 📦 ${tableName} <span class="group-progress">0 / ${chunkCount}</span>`;
 
         const body = document.createElement('div');
         body.className = 'table-group-body hidden';
@@ -455,6 +461,13 @@
         div.appendChild(header);
         div.appendChild(body);
         return div;
+    }
+
+    function updateGroupProgress(groupId, done, total) {
+        const header = document.getElementById(groupId)?.querySelector('.group-progress');
+        if (header) {
+            header.textContent = `${done} / ${total}`;
+        }
     }
 
     function buildChunkRow(id, name, badgeText, badgeClass) {
@@ -502,7 +515,7 @@
 
         try {
             const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}';
-            const response = await fetch(dbZipRoute.backup_restore, {
+            const response = await fetch('/backup/restore', {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': csrf
