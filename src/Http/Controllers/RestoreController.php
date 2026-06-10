@@ -15,7 +15,9 @@ class RestoreController extends Controller
 
     public function index(): View
     {
-        return view('db-zip::restore');
+        return view('db-zip::restore', [
+            'route' => config('db-zip.route'),
+        ]);
     }
 
     public function restoreTable(Request $request): JsonResponse

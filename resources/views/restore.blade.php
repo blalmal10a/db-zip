@@ -294,6 +294,8 @@
 @push('scripts')
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha384-+mbV2IY1Zk/X1p/nWllGySJSUN8uMs+gUAN10Or95UBH0fpj6GfKgPmgC5EXieXG" crossorigin="anonymous"></script>
 <script>
+    const dbZipRoute = @json($route ?? config('db-zip.route'));
+
     const fileInput = document.getElementById('backup-zip');
     const dropZone = document.getElementById('drop-zone');
     const fileNameEl = document.getElementById('file-name');
@@ -500,7 +502,7 @@
 
         try {
             const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}';
-            const response = await fetch('/backup/restore', {
+            const response = await fetch(dbZipRoute.backup_restore, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': csrf
