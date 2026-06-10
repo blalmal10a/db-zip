@@ -21,7 +21,7 @@ class Installer
 
     private static function guessAppUrl(): string
     {
-        $envPath = getcwd() . '/.env';
+        $envPath = getcwd().'/.env';
 
         if (file_exists($envPath)) {
             $env = file_get_contents($envPath);
