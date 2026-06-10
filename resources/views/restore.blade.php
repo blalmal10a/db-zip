@@ -3,291 +3,39 @@
 @section('title', 'Restore Database Backup')
 
 @push('styles')
-<style>
-    h2 {
-        margin: 0 0 6px;
-        font-size: 1.4rem;
-        font-weight: 700;
-    }
-
-    .subtitle {
-        color: #666;
-        font-size: 0.875rem;
-        margin-bottom: 24px;
-    }
-
-    .upload-area {
-        border: 2px dashed #c5cae9;
-        border-radius: 10px;
-        padding: 28px;
-        text-align: center;
-        cursor: pointer;
-        transition: border-color 0.2s, background 0.2s;
-        background: #fafbff;
-        margin-bottom: 20px;
-    }
-
-    .upload-area:hover,
-    .upload-area.dragover {
-        border-color: #5c6bc0;
-        background: #f0f2ff;
-    }
-
-    .upload-area input[type="file"] {
-        display: none;
-    }
-
-    .upload-icon {
-        font-size: 2rem;
-        margin-bottom: 8px;
-    }
-
-    .upload-label {
-        font-size: 0.95rem;
-        color: #555;
-    }
-
-    .upload-label span {
-        color: #5c6bc0;
-        font-weight: 600;
-        cursor: pointer;
-    }
-
-    #file-name {
-        margin-top: 8px;
-        font-size: 0.82rem;
-        color: #5c6bc0;
-        font-weight: 500;
-        min-height: 18px;
-    }
-
-    .btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 11px 26px;
-        background: #5c6bc0;
-        color: #fff;
-        border: none;
-        border-radius: 8px;
-        font-size: 0.95rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background 0.2s, opacity 0.2s;
-    }
-
-    .btn:hover {
-        background: #3f51b5;
-    }
-
-    .btn:disabled {
-        opacity: 0.55;
-        cursor: not-allowed;
-    }
-
-    #progress-wrap {
-        display: none;
-        margin: 20px 0 0;
-    }
-
-    #progress-wrap.visible {
-        display: block;
-    }
-
-    .progress-track {
-        background: #e8eaf6;
-        border-radius: 999px;
-        height: 8px;
-        overflow: hidden;
-        margin-bottom: 6px;
-    }
-
-    .progress-bar {
-        height: 100%;
-        width: 0%;
-        background: linear-gradient(90deg, #5c6bc0, #7986cb);
-        border-radius: 999px;
-        transition: width 0.3s ease;
-    }
-
-    #progress-label {
-        font-size: 0.8rem;
-        color: #888;
-        text-align: right;
-    }
-
-    #status-log {
-        margin-top: 24px;
-        border-radius: 10px;
-        border: 1px solid #e0e0e0;
-        background: #fafafa;
-        max-height: 500px;
-        overflow-y: auto;
-        padding: 14px 16px;
-        font-size: 0.85rem;
-        line-height: 1.7;
-    }
-
-    .table-group {
-        margin: 4px 0;
-        border: 1px solid #e8e8e8;
-        border-radius: 6px;
-        overflow: hidden;
-    }
-
-    .table-group-header {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 12px;
-        background: #f5f5f5;
-        cursor: pointer;
-        user-select: none;
-        font-weight: 600;
-        font-size: 0.9rem;
-        transition: background 0.15s;
-    }
-
-    .table-group-header:hover {
-        background: #eeeeee;
-    }
-
-    .table-group-header .toggle-icon {
-        font-size: 0.7rem;
-        transition: transform 0.2s;
-        color: #888;
-    }
-
-    .table-group-header .toggle-icon.collapsed {
-        transform: rotate(-90deg);
-    }
-
-    .table-group-body {
-        padding: 0;
-    }
-
-    .table-group-body.hidden {
-        display: none;
-    }
-
-    .chunk-row {
-        display: flex;
-        align-items: baseline;
-        justify-content: space-between;
-        padding: 5px 12px 5px 28px;
-        border-top: 1px solid #f0f0f0;
-        font-size: 0.82rem;
-    }
-
-    .chunk-row:first-child {
-        border-top: none;
-    }
-
-    .log-name {
-        color: #333;
-    }
-
-    .badge {
-        font-size: 0.75rem;
-        font-weight: 700;
-        padding: 2px 9px;
-        border-radius: 999px;
-        white-space: nowrap;
-        margin-left: 10px;
-        flex-shrink: 0;
-    }
-
-    .badge-pending {
-        background: #e8eaf6;
-        color: #5c6bc0;
-    }
-
-    .badge-uploading {
-        background: #fff8e1;
-        color: #f57f17;
-    }
-
-    .badge-success {
-        background: #e8f5e9;
-        color: #2e7d32;
-    }
-
-    .badge-error {
-        background: #ffebee;
-        color: #c62828;
-    }
-
-    .badge-skipped {
-        background: #f5f5f5;
-        color: #757575;
-    }
-
-    .log-placeholder {
-        color: #aaa;
-        font-style: italic;
-    }
-
-    .summary-line {
-        margin-top: 12px;
-        padding-top: 10px;
-        border-top: 1px dashed #ccc;
-        font-size: 0.85rem;
-        font-weight: 600;
-    }
-
-    .text-success {
-        color: #2e7d32;
-    }
-
-    .text-error {
-        color: #c62828;
-    }
-
-    .nginx-banner {
-        display: none;
-        margin-bottom: 16px;
-        padding: 12px 16px;
-        background: #fff3cd;
-        border: 1px solid #ffc107;
-        border-radius: 8px;
-        color: #856404;
-        font-size: 0.85rem;
-    }
-
-    .nginx-banner.visible {
-        display: block;
-    }
-</style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.0/dist/index.global.min.js"></script>
 @endpush
 
 @section('content')
-<div class="card">
-    <h2>Restore Database Backup</h2>
-    <p class="subtitle">Upload a ZIP archive containing <code>table.json</code> and CSV files per table.</p>
+<div class="bg-white p-6 rounded-xl shadow-xs max-w-2xl mx-auto border border-gray-100">
+    <h2 class="m-0 mb-1.5 text-2xl font-bold text-gray-900">Restore Database Backup</h2>
+    <p class="text-gray-500 text-sm mb-6">Upload a ZIP archive containing <code>table.json</code> and CSV files per table.</p>
 
-    <div class="nginx-banner" id="nginx-banner">
+    <div class="hidden mb-4 p-3 px-4 bg-amber-50 border border-amber-300 rounded-lg text-amber-800 text-sm" id="nginx-banner">
         Server rejected the request. File may be too large (server limit). Try a smaller backup or increase <code>client_max_body_size</code>.
     </div>
 
-    <div class="upload-area" id="drop-zone">
-        <input type="file" id="backup-zip" accept=".zip">
-        <div class="upload-icon">&#128230;</div>
-        <div class="upload-label">Drag &amp; drop your ZIP here, or <span onclick="document.getElementById('backup-zip').click()">browse</span></div>
-        <div id="file-name"></div>
+    <div class="border-2 border-dashed border-indigo-100 rounded-xl p-7 text-center cursor-pointer transition-colors bg-slate-50/50 hover:bg-indigo-50/40 hover:border-indigo-400 group [&.dragover]:border-indigo-500 [&.dragover]:bg-indigo-50/40" id="drop-zone">
+        <input type="file" id="backup-zip" accept=".zip" class="hidden">
+        <div class="text-3xl mb-2">&#128230;</div>
+        <div class="text-sm text-gray-600">Drag &amp; drop your ZIP here, or <span class="text-indigo-500 font-semibold cursor-pointer" onclick="document.getElementById('backup-zip').click()">browse</span></div>
+        <div id="file-name" class="mt-2 text-xs text-indigo-500 font-medium min-h-[18px]"></div>
     </div>
 
-    <button class="btn" id="start-restore" disabled>
+    <button class="inline-flex items-center gap-2 px-6 py-2.5 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-55 disabled:cursor-not-allowed text-white border-none rounded-lg text-sm font-semibold cursor-pointer transition-colors mt-5" id="start-restore" disabled>
         &#9654; Start Restore
     </button>
 
-    <div id="progress-wrap">
-        <div class="progress-track">
-            <div class="progress-bar" id="progress-bar"></div>
+    <div id="progress-wrap" class="hidden mt-5">
+        <div class="bg-indigo-50 rounded-full h-2 overflow-hidden mb-1.5">
+            <div class="h-full w-0 bg-gradient-to-r from-indigo-500 to-indigo-400 rounded-full transition-[width] duration-300 ease-in-out" id="progress-bar"></div>
         </div>
-        <div id="progress-label">0 / 0</div>
+        <div id="progress-label" class="text-xs text-gray-400 text-right">0 / 0</div>
     </div>
 
-    <div id="status-log"><span class="log-placeholder">No restore started yet.</span></div>
+    <div id="status-log" class="mt-6 rounded-xl border border-gray-200 bg-gray-50 max-h-[500px] overflow-y-auto p-4 text-sm leading-relaxed text-gray-700">
+        <span class="text-gray-400 italic">No restore started yet.</span>
+    </div>
 </div>
 @endsection
 
@@ -338,7 +86,7 @@
 
         startBtn.disabled = true;
         log.innerHTML = '';
-        nginxBanner.classList.remove('visible');
+        nginxBanner.classList.replace('block', 'hidden');
 
         const zipFile = fileInput.files[0];
 
@@ -347,7 +95,7 @@
         try {
             zip = await new JSZip().loadAsync(zipFile);
         } catch (err) {
-            appendLog(`<span class="text-error">Could not read ZIP: ${err.message}</span>`);
+            appendLog(`<span class="text-red-700">Could not read ZIP: ${err.message}</span>`);
             startBtn.disabled = false;
             return;
         }
@@ -359,7 +107,7 @@
         );
 
         if (!csvFiles.length) {
-            appendLog("<span class='text-error'>No CSV files found in the ZIP.</span>");
+            appendLog("<span class='text-red-700'>No CSV files found in the ZIP.</span>");
             startBtn.disabled = false;
             return;
         }
@@ -368,7 +116,7 @@
 
         const groups = groupCsvFiles(csvFiles);
 
-        progressWrap.classList.add('visible');
+        progressWrap.classList.replace('hidden', 'block');
         setProgress(0, groups.length);
 
         let successCount = 0,
@@ -392,7 +140,7 @@
                 const zipEntry = group.files[ci];
                 const cleanName = zipEntry.name.split('/').pop();
                 const chunkId = `${groupId}-chunk-${ci}`;
-                const rowEl = buildChunkRow(chunkId, cleanName, 'Uploading…', 'badge-uploading');
+                const rowEl = buildChunkRow(chunkId, cleanName, 'Uploading…', 'bg-amber-50 text-amber-700');
                 const body = groupEl.querySelector('.table-group-body');
                 body.appendChild(rowEl);
 
@@ -417,9 +165,9 @@
         }
 
         appendLog(
-            `<div class="summary-line">
-                ✅ <span class="text-success">${successCount} succeeded</span>
-                ${errorCount ? `&nbsp; ❌ <span class="text-error">${errorCount} failed</span>` : ''}
+            `<div class="mt-3 pt-2.5 border-t border-dashed border-gray-300 text-sm font-semibold">
+                ✅ <span class="text-green-700">${successCount} succeeded</span>
+                ${errorCount ? `&nbsp; ❌ <span class="text-red-700">${errorCount} failed</span>` : ''}
              </div>`
         );
 
@@ -442,12 +190,12 @@
 
     function buildGroupElement(groupId, tableName, chunkCount) {
         const div = document.createElement('div');
-        div.className = 'table-group';
+        div.className = 'my-1 border border-gray-200 rounded-md overflow-hidden';
         div.id = groupId;
 
         const header = document.createElement('div');
-        header.className = 'table-group-header';
-        header.innerHTML = `<span class="toggle-icon collapsed">▼</span> 📦 ${tableName} <span class="group-progress">0 / ${chunkCount}</span>`;
+        header.className = 'flex items-center gap-2 p-2 px-3 bg-gray-100 hover:bg-gray-200 cursor-pointer select-none font-semibold text-sm transition-colors';
+        header.innerHTML = `<span class="toggle-icon text-[0.7rem] text-gray-400 transition-transform duration-200 -rotate-90">▼</span> 📦 ${tableName} <span class="group-progress">0 / ${chunkCount}</span>`;
 
         const body = document.createElement('div');
         body.className = 'table-group-body hidden';
@@ -455,7 +203,7 @@
 
         header.addEventListener('click', () => {
             const isHidden = body.classList.toggle('hidden');
-            header.querySelector('.toggle-icon').classList.toggle('collapsed', isHidden);
+            header.querySelector('.toggle-icon').classList.toggle('-rotate-90', isHidden);
         });
 
         div.appendChild(header);
@@ -473,9 +221,9 @@
     function buildChunkRow(id, name, badgeText, badgeClass) {
         const row = document.createElement('div');
         row.id = id;
-        row.className = 'chunk-row';
-        row.innerHTML = `<span class="log-name">📄 ${name}</span>
-                         <span class="badge ${badgeClass}">${badgeText}</span>`;
+        row.className = 'flex items-baseline justify-between p-1.5 pr-3 pl-7 border-t border-gray-100 first:border-t-0 text-xs';
+        row.innerHTML = `<span class="text-gray-700">📄 ${name}</span>
+                         <span class="badge text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap ml-2.5 shrink-0 ${badgeClass}">${badgeText}</span>`;
         return row;
     }
 
@@ -498,7 +246,7 @@
             }
             return map;
         } catch (err) {
-            appendLog(`<span class="text-error">Could not parse table.json: ${err.message}</span>`);
+            appendLog(`<span class="text-red-700">Could not parse table.json: ${err.message}</span>`);
             return null;
         }
     }
@@ -528,7 +276,7 @@
             if (contentType.includes('text/html') || contentType.includes('text/plain')) {
                 const text = await response.text();
                 if (text.includes('nginx') || text.includes('413') || text.includes('Request Entity Too Large')) {
-                    nginxBanner.classList.add('visible');
+                    nginxBanner.classList.replace('hidden', 'block');
                 }
                 throw new Error(`Server returned HTML — possible nginx limit`);
             }
@@ -539,10 +287,10 @@
                 throw new Error(result.error || `Server error ${response.status}`);
             }
 
-            updateBadge(rowId, '✓ Success', 'badge-success');
+            updateBadge(rowId, '✓ Success', 'bg-green-50 text-green-700');
             return true;
         } catch (err) {
-            updateBadge(rowId, `✗ ${err.message}`, 'badge-error');
+            updateBadge(rowId, `✗ ${err.message}`, 'bg-red-50 text-red-700');
             return false;
         }
     }
@@ -559,7 +307,7 @@
         if (!row) return;
         const badge = row.querySelector('.badge');
         if (!badge) return;
-        badge.className = `badge ${cls}`;
+        badge.className = `badge text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap ml-2.5 shrink-0 ${cls}`;
         badge.textContent = text;
     }
 
