@@ -212,22 +212,37 @@ class DbZip
         Schema::enableForeignKeyConstraints();
     }
 
+    public function downloadBackup(string $fileName): string
+    {
+        $zipPath = $this->getZipPath();
+        $filePath = "{$zipPath}/{$fileName}.zip";
+
+        if (! File::exists($filePath)) {
+            throw new \RuntimeException("Backup file '{$fileName}.zip' not found.");
+        }
+
+        return $filePath;
+    }
+
     public function listBackups(): array
     {
         $zipPath = $this->getZipPath();
-        $disk = Storage::disk('public');
 
-        if (! $disk->exists($zipPath)) {
+        if (! File::isDirectory($zipPath)) {
             return [];
         }
 
-        $files = $disk->files($zipPath);
+        $files = File::files($zipPath);
 
         return array_map(function ($file) {
+            $name = pathinfo($file->getFilename(), PATHINFO_FILENAME);
+
             return [
-                'path' => "public/storage/{$file}",
-                'name' => pathinfo($file, PATHINFO_FILENAME),
-                'url' => "/storage/{$file}",
+                'name' => $name,
+                'filename' => $file->getFilename(),
+                'download_url' => url("/backup/download/{$name}"),
+                'size' => $file->getSize(),
+                'last_modified' => $file->getMTime(),
             ];
         }, $files);
     }
@@ -248,13 +263,13 @@ class DbZip
     {
         $backupPath = config('db-zip.backup_path', 'backup');
 
-        return storage_path("app/public/{$backupPath}/{$timestamp}");
+        return storage_path("{$backupPath}/{$timestamp}");
     }
 
     protected function getZipPath(): string
     {
         $zipPath = config('db-zip.zip_path', 'zip');
 
-        return storage_path("app/public/{$zipPath}");
+        return storage_path("{$zipPath}");
     }
 }
