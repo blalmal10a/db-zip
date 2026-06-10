@@ -9,12 +9,11 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 
 class BackupController extends Controller
 {
-    public function __construct(protected DbZip $dbZip)
-    {
-    }
+    public function __construct(protected DbZip $dbZip) {}
 
     public function index(): View
     {
@@ -88,7 +87,7 @@ class BackupController extends Controller
         }
     }
 
-    public function download(string $fileName): \Symfony\Component\HttpFoundation\Response
+    public function download(string $fileName): Response
     {
         logger('filename: '.$fileName);
         try {
