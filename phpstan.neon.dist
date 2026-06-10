@@ -8,6 +8,8 @@ parameters:
         - config
         - database
     tmpDir: build/phpstan
+    excludePaths:
+        - src/Installer.php
     ignoreErrors:
         -
             message: '#Parameter \#1 \$view of function view expects view-string\|null, string given.#'

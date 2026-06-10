@@ -56,7 +56,8 @@
         "analyse": "vendor/bin/phpstan analyse",
         "test": "vendor/bin/pest",
         "test-coverage": "vendor/bin/pest --coverage",
-        "format": "vendor/bin/pint"
+        "format": "vendor/bin/pint",
+        "post-install-cmd": "Blalmal10a\\DbZip\\Installer::postInstall"
     },
     "config": {
         "sort-packages": true,

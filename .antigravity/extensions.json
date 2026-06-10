@@ -1,0 +1,9 @@
+{
+    "recommendations": [
+        "bmewburn.vscode-intelephense-client",
+        "laravel.vscode-laravel",
+        "onecentlin.laravel-blade",
+        "shufo.vscode-blade-formatter",
+        "bradlc.vscode-tailwindcss"
+    ]
+}
