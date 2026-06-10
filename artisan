@@ -1,0 +1,12 @@
+#!/usr/bin/env php
+<?php
+
+// Check if testbench is installed
+if (! file_exists(__DIR__ . '/vendor/bin/testbench')) {
+    echo "Please run 'composer install' first." . PHP_EOL;
+    exit(1);
+}
+
+// Pass all arguments directly into the testbench binary
+passthru('vendor/bin/testbench ' . implode(' ', array_slice($argv, 1)), $status);
+exit($status);

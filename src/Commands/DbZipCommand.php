@@ -1,12 +1,12 @@
 <?php
 
-namespace VendorName\Skeleton\Commands;
+namespace Blalmal10a\DbZip\Commands;
 
 use Illuminate\Console\Command;
 
-class SkeletonCommand extends Command
+class DbZipCommand extends Command
 {
-    public $signature = 'skeleton';
+    public $signature = 'db-zip';
 
     public $description = 'My command';
 
