@@ -11,7 +11,7 @@
 ## Installation
 
 ```bash
-composer require blalmal10a/db-zip
+composer require blalmal10-a/db-zip
 ```
 
 The package works immediately after installation — no migrations, no setup required.\
