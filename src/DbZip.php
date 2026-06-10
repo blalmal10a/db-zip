@@ -5,7 +5,6 @@ namespace Blalmal10a\DbZip;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Storage;
 use ZipArchive;
 
 class DbZip
