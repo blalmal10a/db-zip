@@ -1,0 +1,32 @@
+name: Backfill Releases
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Create releases for existing tags
+        run: |
+          for tag in v0.0.1 v0.0.2 v0.1.0 v1.0.0 v1.0.1; do
+            if ! gh release view "$tag" &>/dev/null; then
+              echo "Creating release for $tag..."
+              gh release create "$tag" --generate-notes
+              sleep 2
+            else
+              echo "Release $tag already exists"
+            fi
+          done
+        env:
+          GH_TOKEN: ${{ github.token }}
