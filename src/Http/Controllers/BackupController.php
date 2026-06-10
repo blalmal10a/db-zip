@@ -12,9 +12,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class BackupController extends Controller
 {
-    public function __construct(protected DbZip $dbZip)
-    {
-    }
+    public function __construct(protected DbZip $dbZip) {}
 
     public function index()
     {

@@ -1,5 +1,8 @@
 <?php
 
+use Blalmal10a\DbZip\Http\Controllers\BackupController;
+use Blalmal10a\DbZip\Http\Controllers\RestoreController;
+
 return [
     'backup_path' => env('DBZIP_BACKUP_PATH', 'app/backup'),
 
@@ -21,7 +24,7 @@ return [
     ],
 
     'controllers' => [
-        'backup' => Blalmal10a\DbZip\Http\Controllers\BackupController::class,
-        'restore' => Blalmal10a\DbZip\Http\Controllers\RestoreController::class,
+        'backup' => BackupController::class,
+        'restore' => RestoreController::class,
     ],
 ];
