@@ -208,16 +208,8 @@ class DbZip
     public function downloadBackup(string $fileName): string
     {
         $zipPath = $this->getZipPath();
-
         $safeName = basename($fileName);
         $filePath = "{$zipPath}/{$safeName}.zip";
-        logger($filePath);
-        $realZipPath = realpath($zipPath);
-        $realFilePath = realpath($filePath);
-
-        if ($realZipPath === false || $realFilePath === false || ! str_starts_with($realFilePath, $realZipPath)) {
-            throw new \RuntimeException("Backup file '{$fileName}.zip' not found.");
-        }
 
         if (! File::exists($filePath)) {
             throw new \RuntimeException("Backup file '{$fileName}.zip' not found.");
@@ -251,16 +243,9 @@ class DbZip
 
     public function deleteBackup(string $fileName): bool
     {
-
         $zipPath = $this->getZipPath();
-        $filePath = "{$zipPath}/{$fileName}.zip";
-
-        $realZipPath = realpath($zipPath);
-        $realFilePath = realpath($filePath);
-
-        if ($realZipPath === false || $realFilePath === false || ! str_starts_with($realFilePath, $realZipPath)) {
-            return false;
-        }
+        $safeName = basename($fileName);
+        $filePath = "{$zipPath}/{$safeName}.zip";
 
         if (File::exists($filePath)) {
             return File::delete($filePath);
@@ -273,13 +258,13 @@ class DbZip
     {
         $backupPath = config('db-zip.backup_path', 'backup');
 
-        return storage_path("app/{$backupPath}/{$timestamp}");
+        return storage_path("{$backupPath}/{$timestamp}");
     }
 
     protected function getZipPath(): string
     {
         $zipPath = config('db-zip.zip_path', 'zip');
 
-        return storage_path("app/{$zipPath}");
+        return storage_path("{$zipPath}");
     }
 }
