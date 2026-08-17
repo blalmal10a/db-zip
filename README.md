@@ -1,6 +1,6 @@
 # Easily backup and restore Laravel database tables by saving them into zip files.
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/blalmal10-a/db-zip.svg?style=flat-square)](https://packagist.org/packages/blalmal10-a/db-zip)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/blalmal10a/db-zip.svg?style=flat-square)](https://packagist.org/packages/blalmal10a/db-zip)
 [![Fix PHP code style issues](https://github.com/blalmal10a/db-zip/actions/workflows/fix-php-code-style-issues.yml/badge.svg)](https://github.com/blalmal10a/db-zip/actions/workflows/fix-php-code-style-issues.yml)
 [![run-tests](https://github.com/blalmal10a/db-zip/actions/workflows/run-tests.yml/badge.svg)](https://github.com/blalmal10a/db-zip/actions/workflows/run-tests.yml)
 [![PHPStan](https://github.com/blalmal10a/db-zip/actions/workflows/phpstan.yml/badge.svg)](https://github.com/blalmal10a/db-zip/actions/workflows/phpstan.yml)
@@ -11,7 +11,7 @@
 ## Installation
 
 ```bash
-composer require blalmal10-a/db-zip
+composer require blalmal10a/db-zip
 ```
 
 The package works immediately after installation — no migrations, no setup required.\
